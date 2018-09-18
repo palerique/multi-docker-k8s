@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/palerique/multi-docker-k8s.svg?branch=master)](https://travis-ci.org/palerique/multi-docker-k8s)
+
 # multi-docker-k8s
 
 commands executed on GCP console:
