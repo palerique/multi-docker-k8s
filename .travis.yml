@@ -2,24 +2,27 @@ sudo: required
 services:
 - docker
 
+env:
+- GIT_SHA=$(git rev-parse HEAD)
+- CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
 before_install:
 - openssl aes-256-cbc -K $encrypted_0c35eebf403c_key -iv $encrypted_0c35eebf403c_iv -in docker-multi-k8s-4b951fd8abbc.json.enc -out docker-multi-k8s-4b951fd8abbc.json -d
 - curl http://sdk.cloud.google.com | bash > /dev/null;
 - source $HOME/google-cloud-sdk/path.bash.inc
 - gcloud components update kubectl
 - gcloud auth activate-service-account --key-file service-account.json
+- gcloud config set project docker-multi-k8s
+- gcloud config set compute/zone southamerica-east1-a
+- gcloud container clusters get-credentials multi-docker-cluster
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
 - docker build -t palerique/multi-docker-test -f ./client/Dockerfile.dev ./client
 
 script:
 - docker run palerique/multi-docker-test npm run test -- --coverage
 
-after_success:
-- docker build -t palerique/multi-docker-client ./client
-- docker build -t palerique/multi-docker-server ./server
-- docker build -t palerique/multi-docker-worker ./worker
-# Log in to the docker CLI
-- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
-# Take those images and push them to docker hub
-- docker push palerique/multi-docker-client
-- docker push palerique/multi-docker-server
-- docker push palerique/multi-docker-worker
+deploy:
+  provider: script
+  script: bash ./deploy.sh
+  on:
+    branch: master
